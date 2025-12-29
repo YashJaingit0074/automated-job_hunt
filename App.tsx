@@ -1,14 +1,16 @@
 
 import React from 'react';
 import { JobProvider, useJobs } from './context/JobContext';
-import { LayoutDashboard, Briefcase, Settings, Plus, Star, Search, Menu, X, CheckCircle2, Clock, Ban, Trophy } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Settings, Plus, Star, Search, Menu, X, CheckCircle2, Clock, Ban, Trophy, ShieldCheck, UserCheck } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import JobTracker from './components/JobTracker';
 import ResumeSettings from './components/Settings';
 
 const AppContent: React.FC = () => {
-  const { currentView, setCurrentView, jobs } = useJobs();
+  const { currentView, setCurrentView, resume } = useJobs();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  const hasResume = !!(resume.resumeText || resume.skills);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -55,10 +57,25 @@ const AppContent: React.FC = () => {
           ))}
         </nav>
 
+        {/* Identity Status Widget */}
         <div className="p-4 mt-auto border-t border-slate-100">
-          <div className="bg-slate-900 rounded-2xl p-4">
-            <p className="text-white text-sm font-medium">Phase 1 Complete</p>
-            <p className="text-slate-400 text-xs mt-1">Foundation established.</p>
+          <div className={`rounded-2xl p-4 transition-all duration-500 ${hasResume ? 'bg-emerald-50 border border-emerald-100' : 'bg-slate-900'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              {hasResume ? (
+                <UserCheck className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <ShieldCheck className="w-4 h-4 text-slate-400" />
+              )}
+              <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${hasResume ? 'text-emerald-700' : 'text-slate-400'}`}>
+                Identity Status
+              </p>
+            </div>
+            <p className={`text-sm font-bold ${hasResume ? 'text-emerald-900' : 'text-white'}`}>
+              {hasResume ? 'Intelligence Active' : 'Waiting for PDF'}
+            </p>
+            <p className={`text-[10px] mt-1 font-medium ${hasResume ? 'text-emerald-600' : 'text-slate-500'}`}>
+              {hasResume ? 'Auto-Pilot is persistent.' : 'Upload in settings.'}
+            </p>
           </div>
         </div>
       </aside>

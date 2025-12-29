@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { useJobs } from '../context/JobContext';
-import { Save, User, Code, FileCheck, Upload, FileText, CheckCircle, AlertCircle, Zap } from 'lucide-react';
+import { Save, User, Code, FileCheck, Upload, FileText, CheckCircle, AlertCircle, Zap, RefreshCw, Trash2 } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const { resume, setResume } = useJobs();
@@ -16,6 +16,14 @@ const Settings: React.FC = () => {
     setResume(formData);
     setShowSaved(true);
     setTimeout(() => setShowSaved(false), 3000);
+  };
+
+  const handleReset = () => {
+    if (confirm("This will clear your stored identity. You will need to re-upload your resume for AI features. Proceed?")) {
+      const cleared = { fullName: '', skills: '', resumeText: '' };
+      setFormData(cleared);
+      setResume(cleared);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +41,6 @@ const Settings: React.FC = () => {
       reader.onload = async () => {
         const typedarray = new Uint8Array(reader.result as ArrayBuffer);
         
-        // Configure PDF.js worker
         // @ts-ignore
         const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
         if (!pdfjsLib) throw new Error("PDF.js library not loaded");
@@ -46,7 +53,6 @@ const Settings: React.FC = () => {
         
         let completedCount = 0;
 
-        // Process pages in parallel
         const pagePromises = Array.from({ length: totalPages }, (_, i) => 
           pdf.getPage(i + 1).then(async (page: any) => {
             const textContent = await page.getTextContent();
@@ -77,11 +83,11 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in slide-in-from-right-4 duration-500">
+    <div className="max-w-2xl mx-auto space-y-8 animate-in slide-in-from-right-4 duration-500 pb-12">
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-bold text-slate-900">Career Profile</h2>
-          <p className="text-slate-500">Upload your PDF resume for AI-powered auto-pilot features.</p>
+          <p className="text-slate-500">Your professional identity is stored locally and persists across sessions.</p>
         </div>
         <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-100">
           <Zap className="w-3 h-3 fill-current" />
@@ -97,24 +103,36 @@ const Settings: React.FC = () => {
           </div>
           {showSaved && (
             <span className="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-semibold animate-pulse">
-              Profile Updated
+              Sync Successful
             </span>
           )}
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 uppercase tracking-wider">
-              <Upload className="w-4 h-4 text-emerald-600" />
-              Main Resume (PDF Only)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm font-bold text-slate-700 uppercase tracking-wider">
+                <Upload className="w-4 h-4 text-emerald-600" />
+                Persistent Identity Source
+              </label>
+              {formData.resumeText && (
+                <button 
+                  type="button"
+                  onClick={handleReset}
+                  className="text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 uppercase tracking-tighter"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Clear Stored Data
+                </button>
+              )}
+            </div>
             <div 
               onClick={() => !isUploading && fileInputRef.current?.click()}
               className={`group relative cursor-pointer border-2 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center gap-4 min-h-[240px] ${
                 isUploading 
                   ? 'border-emerald-500 bg-emerald-50/20 pointer-events-none' 
                   : formData.resumeText 
-                    ? 'border-emerald-300 bg-emerald-50/30' 
+                    ? 'border-emerald-300 bg-emerald-50/30 ring-4 ring-emerald-500/5' 
                     : 'border-slate-200 hover:border-emerald-500 hover:bg-slate-50'
               }`}
             >
@@ -130,50 +148,29 @@ const Settings: React.FC = () => {
                 <div className="flex flex-col items-center gap-6 w-full max-w-[200px]">
                   <div className="relative flex items-center justify-center">
                     <svg className="w-20 h-20 -rotate-90">
-                      <circle
-                        cx="40"
-                        cy="40"
-                        r="36"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        className="text-emerald-100"
-                      />
-                      <circle
-                        cx="40"
-                        cy="40"
-                        r="36"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        strokeDasharray={226.2}
-                        strokeDashoffset={226.2 - (226.2 * uploadProgress) / 100}
-                        className="text-emerald-600 transition-all duration-300"
-                      />
+                      <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-emerald-100" />
+                      <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={226.2} strokeDashoffset={226.2 - (226.2 * uploadProgress) / 100} className="text-emerald-600 transition-all duration-300" />
                     </svg>
                     <span className="absolute text-sm font-black text-emerald-700">{uploadProgress}%</span>
                   </div>
                   <div className="text-center w-full px-2">
-                    <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">Extracting Intelligence</p>
-                    <div className="w-full h-1.5 bg-emerald-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-emerald-600 transition-all duration-300 rounded-full" 
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
+                    <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">Extraction in progress</p>
                   </div>
                 </div>
               ) : formData.resumeText ? (
                 <>
-                  <div className="bg-emerald-100 p-4 rounded-2xl">
+                  <div className="bg-emerald-100 p-4 rounded-2xl relative">
                     <FileText className="w-8 h-8 text-emerald-600" />
+                    <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    </div>
                   </div>
                   <div className="text-center">
-                    <p className="text-emerald-900 font-bold">Resume Locked & Loaded</p>
-                    <p className="text-emerald-600 text-xs mt-1">Ready for Auto-Pilot optimization.</p>
+                    <p className="text-emerald-900 font-bold">Resume Permanently Stored</p>
+                    <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest mt-1">Ready for all applications</p>
                   </div>
-                  <div className="absolute top-4 right-4 bg-emerald-500 text-white p-1 rounded-full shadow-lg">
-                    <CheckCircle className="w-4 h-4" />
+                  <div className="text-[10px] font-bold text-slate-400 mt-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
+                    Auto-Pilot Optimized
                   </div>
                 </>
               ) : (
@@ -182,8 +179,8 @@ const Settings: React.FC = () => {
                     <Upload className="w-8 h-8 text-slate-400 group-hover:text-emerald-600" />
                   </div>
                   <div className="text-center px-6">
-                    <p className="text-slate-900 font-bold">Click to upload Resume.pdf</p>
-                    <p className="text-slate-500 text-xs mt-1 font-medium">Parallel high-speed engine active</p>
+                    <p className="text-slate-900 font-bold">Upload Resume.pdf once</p>
+                    <p className="text-slate-500 text-xs mt-1 font-medium">We extract and store your identity for all future jobs.</p>
                   </div>
                 </>
               )}
@@ -192,7 +189,7 @@ const Settings: React.FC = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-              <User className="w-4 h-4 text-emerald-600" /> Full Name
+              <User className="w-4 h-4 text-emerald-600" /> Preferred Full Name
             </label>
             <input 
               required
@@ -205,13 +202,14 @@ const Settings: React.FC = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-              <Code className="w-4 h-4 text-emerald-600" /> Parsed Context
+              <Code className="w-4 h-4 text-emerald-600" /> Stored Context (Skills & Experience)
             </label>
             <textarea 
               required
               rows={6}
               className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none resize-none text-slate-900 font-medium text-sm leading-relaxed"
               value={formData.resumeText || formData.skills}
+              placeholder="Your professional summary will appear here after upload..."
               onChange={e => setFormData({ ...formData, resumeText: e.target.value, skills: e.target.value.substring(0, 500) })}
             />
           </div>
@@ -220,8 +218,8 @@ const Settings: React.FC = () => {
             type="submit"
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            Update Application Identity
+            <RefreshCw className={`w-5 h-5 ${showSaved ? 'animate-spin' : ''}`} />
+            Sync Identity Changes
           </button>
         </form>
       </div>
@@ -229,9 +227,9 @@ const Settings: React.FC = () => {
       <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl flex gap-4">
         <AlertCircle className="w-6 h-6 text-blue-600 shrink-0" />
         <div className="text-sm">
-          <p className="text-blue-900 font-bold mb-1">Target Filters Active</p>
+          <p className="text-blue-900 font-bold mb-1">How Local Storage Works</p>
           <p className="text-blue-700">
-            Auto-Pilot is currently configured to prioritize <strong>Remote Tech Roles</strong> and <strong>NCR (Delhi/Noida/Gurugram)</strong> fresher/intern positions.
+            Your data never leaves this browser. We store your parsed resume content locally so that the AI can instantly reference it for any new application you add. **You do not need to re-upload unless your career details change.**
           </p>
         </div>
       </div>
