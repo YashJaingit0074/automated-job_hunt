@@ -19,7 +19,7 @@ const Settings: React.FC = () => {
   };
 
   const handleReset = () => {
-    if (confirm("This will clear your stored identity. You will need to re-upload your resume for AI features. Proceed?")) {
+    if (confirm("This will permanently clear your stored career identity. You will need to re-upload your resume for AI features. Proceed?")) {
       const cleared = { fullName: '', skills: '', resumeText: '' };
       setFormData(cleared);
       setResume(cleared);
@@ -76,7 +76,7 @@ const Settings: React.FC = () => {
       reader.readAsArrayBuffer(file);
     } catch (error) {
       console.error("PDF Parsing Error:", error);
-      alert("Failed to parse PDF. Check console for details.");
+      alert("Failed to parse PDF. Please check the file and try again.");
       setIsUploading(false);
       setUploadProgress(0);
     }
@@ -87,22 +87,22 @@ const Settings: React.FC = () => {
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-bold text-slate-900">Career Profile</h2>
-          <p className="text-slate-500">Your professional identity is stored locally and persists across sessions.</p>
+          <p className="text-slate-500">Your professional identity is stored locally and persists permanently.</p>
         </div>
         <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-100">
           <Zap className="w-3 h-3 fill-current" />
-          High-Speed Engine Active
+          Auto-Pilot Active
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden">
         <div className="px-8 py-6 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FileCheck className="w-6 h-6 text-emerald-400" />
-            <h3 className="text-lg font-bold">Resume Management</h3>
+            <h3 className="text-lg font-bold">Resume Intelligence</h3>
           </div>
           {showSaved && (
-            <span className="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-semibold animate-pulse">
+            <span className="bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
               Sync Successful
             </span>
           )}
@@ -111,28 +111,27 @@ const Settings: React.FC = () => {
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm font-bold text-slate-700 uppercase tracking-wider">
-                <Upload className="w-4 h-4 text-emerald-600" />
-                Persistent Identity Source
+              <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest">
+                Identity Source (PDF)
               </label>
               {formData.resumeText && (
                 <button 
                   type="button"
                   onClick={handleReset}
-                  className="text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 uppercase tracking-tighter"
+                  className="text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 uppercase tracking-tighter transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />
-                  Clear Stored Data
+                  Reset Identity
                 </button>
               )}
             </div>
             <div 
               onClick={() => !isUploading && fileInputRef.current?.click()}
-              className={`group relative cursor-pointer border-2 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center gap-4 min-h-[240px] ${
+              className={`group relative cursor-pointer border-2 border-dashed rounded-3xl transition-all flex flex-col items-center justify-center gap-4 min-h-[200px] ${
                 isUploading 
-                  ? 'border-emerald-500 bg-emerald-50/20 pointer-events-none' 
+                  ? 'border-emerald-500 bg-emerald-50/20' 
                   : formData.resumeText 
-                    ? 'border-emerald-300 bg-emerald-50/30 ring-4 ring-emerald-500/5' 
+                    ? 'border-emerald-200 bg-emerald-50/10' 
                     : 'border-slate-200 hover:border-emerald-500 hover:bg-slate-50'
               }`}
             >
@@ -145,32 +144,18 @@ const Settings: React.FC = () => {
               />
               
               {isUploading ? (
-                <div className="flex flex-col items-center gap-6 w-full max-w-[200px]">
-                  <div className="relative flex items-center justify-center">
-                    <svg className="w-20 h-20 -rotate-90">
-                      <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-emerald-100" />
-                      <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={226.2} strokeDashoffset={226.2 - (226.2 * uploadProgress) / 100} className="text-emerald-600 transition-all duration-300" />
-                    </svg>
-                    <span className="absolute text-sm font-black text-emerald-700">{uploadProgress}%</span>
-                  </div>
-                  <div className="text-center w-full px-2">
-                    <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">Extraction in progress</p>
-                  </div>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin" />
+                  <p className="text-emerald-700 font-bold text-sm">Extracting: {uploadProgress}%</p>
                 </div>
               ) : formData.resumeText ? (
                 <>
-                  <div className="bg-emerald-100 p-4 rounded-2xl relative">
+                  <div className="bg-emerald-100 p-4 rounded-2xl">
                     <FileText className="w-8 h-8 text-emerald-600" />
-                    <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                      <CheckCircle className="w-4 h-4 text-emerald-600" />
-                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-emerald-900 font-bold">Resume Permanently Stored</p>
-                    <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest mt-1">Ready for all applications</p>
-                  </div>
-                  <div className="text-[10px] font-bold text-slate-400 mt-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                    Auto-Pilot Optimized
+                  <div className="text-center px-6">
+                    <p className="text-emerald-900 font-bold">Resume Parsed & Locked</p>
+                    <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest mt-1">Ready for magic apply</p>
                   </div>
                 </>
               ) : (
@@ -179,8 +164,8 @@ const Settings: React.FC = () => {
                     <Upload className="w-8 h-8 text-slate-400 group-hover:text-emerald-600" />
                   </div>
                   <div className="text-center px-6">
-                    <p className="text-slate-900 font-bold">Upload Resume.pdf once</p>
-                    <p className="text-slate-500 text-xs mt-1 font-medium">We extract and store your identity for all future jobs.</p>
+                    <p className="text-slate-900 font-bold">Upload Resume once</p>
+                    <p className="text-slate-500 text-xs mt-1 font-medium">We store your profile locally to boost your speed.</p>
                   </div>
                 </>
               )}
@@ -188,38 +173,38 @@ const Settings: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-              <User className="w-4 h-4 text-emerald-600" /> Preferred Full Name
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <User className="w-4 h-4 text-emerald-600" /> Full Legal Name
             </label>
             <input 
               required
               type="text" 
-              className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-slate-900 font-medium"
+              className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-slate-900 font-medium transition-all"
               value={formData.fullName}
               onChange={e => setFormData({ ...formData, fullName: e.target.value })}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-              <Code className="w-4 h-4 text-emerald-600" /> Stored Context (Skills & Experience)
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <Code className="w-4 h-4 text-emerald-600" /> Professional Summary & Skills
             </label>
             <textarea 
               required
               rows={6}
-              className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none resize-none text-slate-900 font-medium text-sm leading-relaxed"
+              className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none resize-none text-slate-900 font-medium text-sm leading-relaxed transition-all"
               value={formData.resumeText || formData.skills}
-              placeholder="Your professional summary will appear here after upload..."
+              placeholder="Resume details will be extracted here..."
               onChange={e => setFormData({ ...formData, resumeText: e.target.value, skills: e.target.value.substring(0, 500) })}
             />
           </div>
 
           <button 
             type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] flex items-center justify-center gap-2"
           >
             <RefreshCw className={`w-5 h-5 ${showSaved ? 'animate-spin' : ''}`} />
-            Sync Identity Changes
+            Sync Profile
           </button>
         </form>
       </div>
@@ -227,9 +212,9 @@ const Settings: React.FC = () => {
       <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl flex gap-4">
         <AlertCircle className="w-6 h-6 text-blue-600 shrink-0" />
         <div className="text-sm">
-          <p className="text-blue-900 font-bold mb-1">How Local Storage Works</p>
-          <p className="text-blue-700">
-            Your data never leaves this browser. We store your parsed resume content locally so that the AI can instantly reference it for any new application you add. **You do not need to re-upload unless your career details change.**
+          <p className="text-blue-900 font-bold mb-1">Privacy First Storage</p>
+          <p className="text-blue-700 leading-relaxed">
+            Your data is stored within your browser's Local Storage. It never touches our servers. You only need to upload your resume once; subsequent applications will use this stored context automatically.
           </p>
         </div>
       </div>

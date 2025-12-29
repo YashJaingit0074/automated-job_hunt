@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useJobs } from '../context/JobContext';
-import { Users, Calendar, Clock, Trophy, ChevronLeft, ChevronRight, Zap, Sparkles, CheckCircle2, Info, Activity } from 'lucide-react';
+import { Users, Calendar, Clock, Trophy, Zap, Sparkles, CheckCircle2, Activity, Info } from 'lucide-react';
 import SubmissionReceiptModal from './SubmissionReceiptModal';
 import { Job } from '../types';
 
@@ -32,7 +32,6 @@ const Dashboard: React.FC = () => {
     ? Math.round((autoAppliedCount / totalApplied) * 100) 
     : 0;
 
-  // AI Submission Log
   const aiJobs = jobs.filter(j => j.status === 'Auto-Pilot').slice(0, 4);
 
   // --- Calendar Logic ---
@@ -116,7 +115,7 @@ const Dashboard: React.FC = () => {
                   <div className="bg-purple-500/20 p-2 rounded-lg border border-purple-500/30">
                     <Zap className="w-5 h-5 text-purple-400 fill-current" />
                   </div>
-                  <h3 className="text-xl font-black">AI Submission Log</h3>
+                  <h3 className="text-xl font-black text-white">AI Submission Log</h3>
                 </div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Live Stream</div>
               </div>
@@ -240,7 +239,7 @@ const Dashboard: React.FC = () => {
             <p className="text-sm text-slate-400 font-medium">Status updates & milestones</p>
           </div>
           
-          <div className="space-y-6 flex-1 overflow-y-auto pr-2">
+          <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {jobs.slice(0, 10).map(job => (
               <div 
                 key={job.id} 
