@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useJobs } from '../context/JobContext';
-import { X, Sparkles, Copy, Check, Zap, FileText, CheckCircle2, RotateCcw } from 'lucide-react';
+import { X, Sparkles, Copy, Check, Zap, FileText, CheckCircle2, RotateCcw, Send, CheckCircle } from 'lucide-react';
 import { Job } from '../types';
 import { generateCoverLetter, enhanceResume } from '../services/gemini';
 
@@ -9,7 +9,8 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
   const { resume, updateJob } = useJobs();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'resume' | 'letter'>('resume');
-  const [isApplied, setIsApplied] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   
   const [enhancedResume, setEnhancedResume] = useState(job.enhancedResumeText || '');
   const [tailoredLetter, setTailoredLetter] = useState(job.coverLetter || '');
@@ -45,10 +46,23 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
   };
 
   const simulateApply = () => {
-    setIsApplied(true);
+    setIsApplying(true);
+    
+    // Stage 1: Simulation
     setTimeout(() => {
-      updateJob({ ...job, status: 'Auto-Pilot' });
-      onClose();
+      setIsApplying(false);
+      setShowSuccess(true);
+      
+      // Stage 2: Success Confirmation then Close
+      setTimeout(() => {
+        updateJob({ 
+          ...job, 
+          status: 'Auto-Pilot',
+          enhancedResumeText: enhancedResume,
+          coverLetter: tailoredLetter 
+        });
+        onClose();
+      }, 1500);
     }, 2000);
   };
 
@@ -61,10 +75,21 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[80] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-300 border border-white/20">
+      <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-300 border border-white/20 relative">
         
+        {/* Success Overlay */}
+        {showSuccess && (
+          <div className="absolute inset-0 z-[90] bg-emerald-600 flex flex-col items-center justify-center text-white animate-in fade-in duration-300">
+            <div className="bg-white/20 p-6 rounded-full animate-bounce mb-6">
+              <CheckCircle className="w-16 h-16" />
+            </div>
+            <h2 className="text-4xl font-black mb-2">Submission Successful!</h2>
+            <p className="text-emerald-100 font-bold tracking-widest uppercase text-xs">AI Optimized assets transmitted</p>
+          </div>
+        )}
+
         {/* Header */}
-        <div className="px-8 py-6 bg-gradient-to-r from-purple-600 to-indigo-700 text-white flex items-center justify-between">
+        <div className="px-8 py-6 bg-gradient-to-r from-purple-600 to-indigo-700 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
             <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
               <Zap className="w-6 h-6 fill-current text-white" />
@@ -80,7 +105,7 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
         </div>
 
         {/* Tab Selector */}
-        <div className="flex px-8 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex px-8 border-b border-slate-100 bg-slate-50/50 shrink-0">
           <button 
             onClick={() => setActiveTab('resume')}
             className={`px-6 py-4 text-sm font-bold transition-all border-b-2 ${
@@ -102,7 +127,7 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
         {/* Main Content Area */}
         <div className="flex-1 overflow-hidden flex">
           {/* Document Display */}
-          <div className="flex-1 overflow-y-auto p-8 bg-slate-100/30">
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-100/30">
             {!enhancedResume && !isLoading ? (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
                 <div className="relative">
@@ -133,7 +158,7 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
                 </div>
                 <div className="text-center animate-pulse">
                   <p className="text-slate-900 font-black text-xl">Enhancing Your Professional Identity...</p>
-                  <p className="text-slate-500">Injecting keywords for NCR/Remote/Fresher roles</p>
+                  <p className="text-slate-500 font-medium">Injecting keywords for NCR/Remote/Fresher roles</p>
                 </div>
               </div>
             ) : (
@@ -153,14 +178,14 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
                     <RotateCcw className="w-5 h-5" />
                   </button>
                 </div>
-                <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 font-sans prose prose-slate max-w-none min-h-[600px] whitespace-pre-wrap text-slate-900 leading-relaxed text-[15px]">
+                <div className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200 font-sans prose prose-slate max-w-none min-h-[600px] whitespace-pre-wrap text-slate-900 leading-relaxed text-[14px] md:text-[15px]">
                   {activeTab === 'resume' ? enhancedResume : tailoredLetter}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Sidebar Info */}
+          {/* Sidebar Info - Desktop Only */}
           <div className="w-80 border-l border-slate-100 p-8 hidden xl:flex flex-col gap-8 bg-slate-50/20">
             <div>
               <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Job Score</h5>
@@ -192,21 +217,39 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="mt-auto">
-               <button 
-                  disabled={!enhancedResume || isApplied}
-                  onClick={simulateApply}
-                  className="w-full bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
-               >
-                  {isApplied ? (
-                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Applied</>
-                  ) : 'Confirm Auto-Apply'}
-               </button>
-               <p className="text-[10px] text-center text-slate-400 mt-4 font-medium italic">
-                Simulates submission to career site with AI assets.
-               </p>
-            </div>
+        {/* Global Action Footer */}
+        <div className="p-6 border-t border-slate-100 bg-white flex flex-col md:flex-row items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-medium italic">
+            <Sparkles className="w-4 h-4 text-purple-500" />
+            AI has prepared your assets for submission.
+          </div>
+          <div className="flex gap-3 w-full md:w-auto">
+             <button 
+                onClick={onClose}
+                className="flex-1 md:flex-none px-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all"
+             >
+               Discard
+             </button>
+             <button 
+                disabled={!enhancedResume || isApplying || showSuccess}
+                onClick={simulateApply}
+                className="flex-1 md:flex-none bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-3"
+             >
+                {isApplying ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Transmitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Confirm Auto-Apply
+                  </>
+                )}
+             </button>
           </div>
         </div>
       </div>
