@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Job, Resume, ViewType } from '../types';
 
@@ -11,6 +10,7 @@ interface JobContextType {
   deleteJob: (id: string) => void;
   setResume: (resume: Resume) => void;
   setCurrentView: (view: ViewType) => void;
+  importFullData: (data: { jobs: Job[], resume: Resume }) => void;
 }
 
 const JobContext = createContext<JobContextType | undefined>(undefined);
@@ -23,15 +23,27 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
 
-  // Load from local storage
+  // Load from local storage on mount
   useEffect(() => {
     const savedJobs = localStorage.getItem('jobsearch_jobs');
     const savedResume = localStorage.getItem('jobsearch_resume');
-    if (savedJobs) setJobs(JSON.parse(savedJobs));
-    if (savedResume) setResumeState(JSON.parse(savedResume));
+    if (savedJobs) {
+      try {
+        setJobs(JSON.parse(savedJobs));
+      } catch (e) {
+        console.error("Failed to parse jobs from storage", e);
+      }
+    }
+    if (savedResume) {
+      try {
+        setResumeState(JSON.parse(savedResume));
+      } catch (e) {
+        console.error("Failed to parse resume from storage", e);
+      }
+    }
   }, []);
 
-  // Save to local storage
+  // Save to local storage whenever state changes
   useEffect(() => {
     localStorage.setItem('jobsearch_jobs', JSON.stringify(jobs));
   }, [jobs]);
@@ -44,6 +56,11 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateJob = (updatedJob: Job) => setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
   const deleteJob = (id: string) => setJobs(prev => prev.filter(j => j.id !== id));
   const setResume = (newResume: Resume) => setResumeState(newResume);
+  
+  const importFullData = (data: { jobs: Job[], resume: Resume }) => {
+    if (data.jobs) setJobs(data.jobs);
+    if (data.resume) setResumeState(data.resume);
+  };
 
   return (
     <JobContext.Provider value={{
@@ -54,7 +71,8 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updateJob,
       deleteJob,
       setResume,
-      setCurrentView
+      setCurrentView,
+      importFullData
     }}>
       {children}
     </JobContext.Provider>

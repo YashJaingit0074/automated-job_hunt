@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { useJobs } from '../context/JobContext';
-import { Users, Calendar, Clock, Trophy, Zap, Sparkles, CheckCircle2, Activity, Info } from 'lucide-react';
+import { Users, Calendar, Clock, Trophy, Zap, Sparkles, CheckCircle2, Activity, Info, HardDrive } from 'lucide-react';
 import SubmissionReceiptModal from './SubmissionReceiptModal';
 import { Job } from '../types';
 
@@ -73,7 +72,13 @@ const Dashboard: React.FC = () => {
             Intelligence Hub
             <div className="bg-emerald-500 w-2 h-2 rounded-full animate-pulse" />
           </h2>
-          <p className="text-slate-500 font-medium">Monitoring your automated career trajectory.</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-slate-500 font-medium">Monitoring your automated career trajectory.</p>
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 bg-slate-900 rounded-full text-[9px] font-black text-white uppercase tracking-widest">
+              <HardDrive className="w-2.5 h-2.5" />
+              Database Secured
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-3">
            <div className="hidden sm:flex flex-col items-end mr-2">

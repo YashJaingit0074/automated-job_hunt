@@ -1,20 +1,20 @@
-
 import React, { useState, useRef } from 'react';
 import { useJobs } from '../context/JobContext';
 import { 
   Save, User, Code, FileCheck, Upload, FileText, 
   CheckCircle, AlertCircle, Zap, RefreshCw, Trash2, 
-  Cloud, ExternalLink, Globe, Layout
+  Cloud, ExternalLink, Globe, Layout, Download, Database, HardDrive
 } from 'lucide-react';
 
 const Settings: React.FC = () => {
-  const { resume, setResume } = useJobs();
+  const { resume, setResume, jobs, importFullData } = useJobs();
   const [formData, setFormData] = useState(resume);
   const [showSaved, setShowSaved] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isCloudSyncing, setIsCloudSyncing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +31,49 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleExportData = () => {
+    const data = {
+      jobs,
+      resume,
+      exportDate: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `JobSearch_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        if (data.jobs && data.resume) {
+          if (confirm("Importing will overwrite your current applications and resume. Continue?")) {
+            importFullData(data);
+            setFormData(data.resume);
+            alert("Data imported successfully!");
+          }
+        } else {
+          alert("Invalid backup file format.");
+        }
+      } catch (err) {
+        alert("Failed to read the file. Please ensure it is a valid JSON backup.");
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const simulateGoogleDriveImport = () => {
     setIsCloudSyncing(true);
-    // Simulating authentication and fetching from Drive
     setTimeout(() => {
       const mockCloudResume = `
         Experience: Senior Software Engineer at TechCorp.
@@ -173,6 +213,50 @@ const Settings: React.FC = () => {
               </button>
             </form>
           </div>
+
+          {/* Data Management Section */}
+          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden p-8">
+             <div className="flex items-center gap-3 mb-6">
+                <div className="bg-slate-100 p-2 rounded-xl">
+                  <Database className="w-5 h-5 text-slate-900" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Data Portability</h3>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Maintenance & Backups</p>
+                </div>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button 
+                  onClick={handleExportData}
+                  className="flex items-center justify-center gap-3 p-6 bg-slate-50 hover:bg-slate-100 rounded-3xl border border-slate-200 transition-all group"
+                >
+                   <Download className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />
+                   <div className="text-left">
+                      <p className="text-sm font-bold text-slate-900">Export All Records</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">Download Backup JSON</p>
+                   </div>
+                </button>
+
+                <button 
+                  onClick={() => importInputRef.current?.click()}
+                  className="flex items-center justify-center gap-3 p-6 bg-slate-50 hover:bg-slate-100 rounded-3xl border border-slate-200 transition-all group"
+                >
+                   <Upload className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />
+                   <div className="text-left">
+                      <p className="text-sm font-bold text-slate-900">Import Records</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">Restore from JSON</p>
+                   </div>
+                </button>
+                <input 
+                  type="file" 
+                  ref={importInputRef} 
+                  className="hidden" 
+                  accept=".json"
+                  onChange={handleImportData}
+                />
+             </div>
+          </div>
         </div>
 
         {/* Sidebar: Cloud Integrations */}
@@ -259,6 +343,14 @@ const Settings: React.FC = () => {
               Wipe Local Identity
             </button>
           )}
+
+          <div className="p-6 bg-slate-100 rounded-3xl flex items-center gap-3">
+             <HardDrive className="w-5 h-5 text-slate-400" />
+             <div className="text-left">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Records</p>
+                <p className="text-sm font-black text-slate-900">{jobs.length} Applications Secured</p>
+             </div>
+          </div>
         </div>
       </div>
 
