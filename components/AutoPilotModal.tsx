@@ -35,6 +35,7 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
       setEnhancedResume(res);
       setTailoredLetter(letter);
       
+      // Update persistent storage immediately
       updateJob({
         ...job,
         enhancedResumeText: res,
@@ -59,22 +60,14 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
       const { jsPDF } = window.jspdf;
 
       if (!html2canvas || !jsPDF) {
-        throw new Error("PDF libraries not loaded. Please check your internet connection.");
+        throw new Error("PDF libraries not loaded.");
       }
 
-      // Add a temporary class for cleaner capture
       const element = documentRef.current.querySelector('.resume-document') as HTMLElement;
       if (!element) return;
       
       element.classList.add('pdf-export-target');
-
-      const canvas = await html2canvas(element, {
-        scale: 2, // High resolution
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
       element.classList.remove('pdf-export-target');
 
       const imgData = canvas.toDataURL('image/png');
@@ -85,12 +78,11 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
       });
 
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
-      
       const fileName = `${resume.fullName.replace(/\s+/g, '_')}_${activeTab === 'resume' ? 'Resume' : 'CoverLetter'}_${job.company.replace(/\s+/g, '_')}.pdf`;
       pdf.save(fileName);
     } catch (error) {
       console.error("PDF Export failed:", error);
-      alert("Failed to generate PDF. You can try copying the text instead.");
+      alert("Failed to generate PDF.");
     } finally {
       setIsExporting(false);
     }
@@ -101,15 +93,18 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
     setTimeout(() => {
       setIsApplying(false);
       setShowSuccess(true);
+      
+      // Commit state before closing
+      updateJob({ 
+        ...job, 
+        status: 'Auto-Pilot',
+        enhancedResumeText: enhancedResume,
+        coverLetter: tailoredLetter 
+      });
+
       setTimeout(() => {
-        updateJob({ 
-          ...job, 
-          status: 'Auto-Pilot',
-          enhancedResumeText: enhancedResume,
-          coverLetter: tailoredLetter 
-        });
         onClose();
-      }, 1500);
+      }, 1800);
     }, 2000);
   };
 
@@ -126,12 +121,12 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
         
         {/* Success Overlay */}
         {showSuccess && (
-          <div className="absolute inset-0 z-[100] bg-emerald-600 flex flex-col items-center justify-center text-white animate-in fade-in duration-300">
+          <div className="absolute inset-0 z-[100] bg-emerald-600 flex flex-col items-center justify-center text-white animate-in fade-in duration-500">
             <div className="bg-white/20 p-6 rounded-full animate-bounce mb-6">
               <CheckCircle className="w-16 h-16" />
             </div>
-            <h2 className="text-4xl font-black mb-2">Submission Successful!</h2>
-            <p className="text-emerald-100 font-bold tracking-widest uppercase text-xs">AI Optimized assets transmitted</p>
+            <h2 className="text-4xl font-black mb-2">Transmission Successful!</h2>
+            <p className="text-emerald-100 font-bold tracking-widest uppercase text-xs">AI Optimized assets are now secured in records</p>
           </div>
         )}
 
@@ -183,12 +178,12 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-hidden flex">
-          <div className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar scroll-smooth">
+          <div className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar scroll-smooth bg-slate-100/30">
             {!enhancedResume && !isLoading ? (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-6 max-w-md mx-auto">
                 <div className="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100">
                   <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-                  <h4 className="text-2xl font-black text-slate-900">Document Engine</h4>
+                  <h4 className="text-2xl font-black text-slate-900">AI Intelligence Engine</h4>
                   <p className="text-slate-500 mt-2 font-medium leading-relaxed">
                     We'll re-engineer your professional profile into a tailored document optimized for {job.company}'s hiring standards.
                   </p>
@@ -198,17 +193,17 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
                   className="w-full bg-slate-900 hover:bg-black text-white px-8 py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
                 >
                   <Zap className="w-5 h-5 fill-current" />
-                  Generate Premium Assets
+                  Generate Tailored Assets
                 </button>
               </div>
             ) : isLoading ? (
               <div className="h-full flex flex-col items-center justify-center space-y-8">
                 <div className="relative">
                   <div className="w-24 h-24 border-[6px] border-slate-200 border-t-purple-600 rounded-full animate-spin shadow-inner" />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-purple-600 text-[10px] font-black uppercase tracking-tighter">Rendering</div>
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-purple-600 text-[10px] font-black uppercase tracking-tighter">Analyzing</div>
                 </div>
                 <div className="text-center">
-                  <p className="text-slate-900 font-black text-xl">Aligning Professional Identity...</p>
+                  <p className="text-slate-900 font-black text-xl">Aligning Career Trajectory...</p>
                   <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-2">Gemini 3 Pro Intelligence Active</p>
                 </div>
               </div>
@@ -252,10 +247,10 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
              <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
                 <div className="flex items-center gap-2 mb-3">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <h6 className="text-xs font-black text-emerald-900 uppercase tracking-widest">Optimized</h6>
+                  <h6 className="text-xs font-black text-emerald-900 uppercase tracking-widest">Verified</h6>
                 </div>
                 <p className="text-[11px] text-emerald-700 font-medium leading-relaxed">
-                  The document has been formatted with industry-standard typography and margin layouts preferred by Fortune 500 recruiters.
+                  Asset analysis confirms high alignment with the JD. Your keywords have been optimized for high-callback rates.
                 </p>
              </div>
           </div>
@@ -265,29 +260,29 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
         <div className="p-6 border-t border-slate-200 bg-white flex flex-col md:flex-row items-center justify-between gap-4 shrink-0 z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
           <div className="flex items-center gap-3 text-slate-500 text-xs font-black uppercase tracking-widest">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Document Verified
+            Transmission Ready
           </div>
           <div className="flex gap-3 w-full md:w-auto">
              <button 
                 onClick={onClose}
                 className="flex-1 md:flex-none px-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all text-xs uppercase tracking-widest"
              >
-               Cancel
+               Back
              </button>
              <button 
                 disabled={!enhancedResume || isApplying || showSuccess}
                 onClick={simulateApply}
-                className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-3 active:scale-95"
+                className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-10 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-3 active:scale-95"
              >
                 {isApplying ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Transmitting...
+                    Processing...
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Confirm Application
+                    Finalize Application
                   </>
                 )}
              </button>

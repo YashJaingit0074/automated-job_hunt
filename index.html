@@ -18,13 +18,15 @@
     body {
       font-family: 'Inter', sans-serif;
       background-color: #f8fafc;
+      color: #0f172a;
     }
     
-    /* Document Texture Effects */
+    /* Document Texture Effects for Resume Rendering */
     .resume-document {
       background: #ffffff;
       position: relative;
       box-sizing: border-box;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
     }
     
     .resume-document::before {
@@ -50,7 +52,7 @@
       background: #cbd5e1;
     }
 
-    /* Print specific adjustments to ensure html2canvas captures correctly */
+    /* Target class for PDF generation to strip UI elements */
     .pdf-export-target {
       margin: 0 !important;
       box-shadow: none !important;

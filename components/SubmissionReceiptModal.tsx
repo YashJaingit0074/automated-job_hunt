@@ -1,25 +1,67 @@
-import React from 'react';
-import { X, Calendar, MapPin, Building2, CheckCircle, ShieldCheck, Download } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Calendar, MapPin, Building2, CheckCircle, ShieldCheck, Download, Loader2 } from 'lucide-react';
 import { Job } from '../types';
+import { useJobs } from '../context/JobContext';
 import ResumePaper from './ResumePaper';
 
 const SubmissionReceiptModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onClose }) => {
+  const { resume } = useJobs();
+  const [isExporting, setIsExporting] = useState<'resume' | 'letter' | null>(null);
+  const resumeRef = useRef<HTMLDivElement>(null);
+  const letterRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadPDF = async (type: 'resume' | 'letter') => {
+    const targetRef = type === 'resume' ? resumeRef : letterRef;
+    if (!targetRef.current || isExporting) return;
+    
+    setIsExporting(type);
+    try {
+      // @ts-ignore
+      const html2canvas = window.html2canvas;
+      // @ts-ignore
+      const { jsPDF } = window.jspdf;
+
+      const element = targetRef.current.querySelector('.resume-document') as HTMLElement;
+      if (!element) return;
+      
+      element.classList.add('pdf-export-target');
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      element.classList.remove('pdf-export-target');
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      const fileName = `${resume.fullName.replace(/\s+/g, '_')}_${type === 'resume' ? 'Resume' : 'CoverLetter'}_${job.company.replace(/\s+/g, '_')}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error("PDF Export failed:", error);
+      alert("Failed to generate PDF.");
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[80] flex items-center justify-center p-4">
-      <div className="bg-[#f8fafc] w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-300 border border-white/20">
+      <div className="bg-[#f8fafc] w-full max-w-6xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[90vh] animate-in zoom-in-95 duration-300 border border-white/20">
         
         {/* Header */}
-        <div className="px-8 py-6 bg-white border-b border-slate-200 flex items-start justify-between">
+        <div className="px-8 py-6 bg-white border-b border-slate-200 flex items-start justify-between shrink-0">
           <div className="flex gap-6">
             <div className="bg-slate-900 p-4 rounded-2xl shadow-lg shadow-slate-200">
               <ShieldCheck className="w-8 h-8 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded">Verified Transmission</span>
-                <span className="text-slate-400 text-[10px] font-bold">ID: {job.id.toUpperCase()}</span>
+                <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded">Tailored Transmission</span>
+                <span className="text-slate-400 text-[10px] font-bold">LOG ID: {job.id.toUpperCase()}</span>
               </div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Transmission Receipt</h3>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Application Receipt</h3>
               <div className="flex items-center gap-4 mt-2 text-slate-500 text-xs font-black uppercase tracking-widest">
                 <div className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5" /> {job.company}</div>
                 <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {job.location}</div>
@@ -33,18 +75,40 @@ const SubmissionReceiptModal: React.FC<{ job: Job, onClose: () => void }> = ({ j
         </div>
 
         {/* Dual Document View */}
-        <div className="flex-1 overflow-y-auto p-8 flex flex-col lg:flex-row gap-12 custom-scrollbar bg-slate-100/50">
+        <div className="flex-1 overflow-y-auto p-8 flex flex-col lg:flex-row gap-12 custom-scrollbar bg-slate-100/30">
           
-          <div className="flex-1 space-y-4">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Submitted Resume</h4>
-            <div className="scale-[0.85] origin-top">
+          {/* Resume Preview */}
+          <div className="flex-1 space-y-6">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Optimized Resume</h4>
+              <button 
+                onClick={() => handleDownloadPDF('resume')}
+                disabled={isExporting !== null}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 hover:text-slate-900 shadow-sm transition-all"
+              >
+                {isExporting === 'resume' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                Download PDF
+              </button>
+            </div>
+            <div ref={resumeRef} className="scale-[0.8] md:scale-[0.9] origin-top border border-slate-200 rounded-xl overflow-hidden shadow-2xl">
               <ResumePaper content={job.enhancedResumeText || ""} type="resume" />
             </div>
           </div>
 
-          <div className="flex-1 space-y-4">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Submitted Letter</h4>
-            <div className="scale-[0.85] origin-top">
+          {/* Letter Preview */}
+          <div className="flex-1 space-y-6">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tailored Letter</h4>
+              <button 
+                onClick={() => handleDownloadPDF('letter')}
+                disabled={isExporting !== null}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 hover:text-slate-900 shadow-sm transition-all"
+              >
+                {isExporting === 'letter' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                Download PDF
+              </button>
+            </div>
+            <div ref={letterRef} className="scale-[0.8] md:scale-[0.9] origin-top border border-slate-200 rounded-xl overflow-hidden shadow-2xl">
               <ResumePaper content={job.coverLetter || ""} type="letter" />
             </div>
           </div>
@@ -52,16 +116,16 @@ const SubmissionReceiptModal: React.FC<{ job: Job, onClose: () => void }> = ({ j
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 bg-white border-t border-slate-200 flex items-center justify-between">
+        <div className="px-8 py-6 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 text-emerald-600 font-black text-xs uppercase tracking-widest">
             <CheckCircle className="w-5 h-5" />
-            Transmission Secured
+            Database Synchronization Complete
           </div>
           <button 
             onClick={onClose}
-            className="bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-black transition-all"
+            className="bg-slate-900 text-white px-10 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-black transition-all shadow-xl shadow-slate-900/10"
           >
-            Close Receipt
+            Done
           </button>
         </div>
       </div>
