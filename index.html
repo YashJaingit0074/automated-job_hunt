@@ -18,6 +18,21 @@
     }
     .prose h1, .prose h2, .prose h3 { color: #0f172a; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; }
     .prose p { margin-bottom: 1rem; line-height: 1.6; }
+    
+    /* Custom Scrollbar for a premium feel */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
+    }
   </style>
 <script type="importmap">
 {
@@ -34,5 +49,15 @@
 </head>
 <body>
   <div id="root"></div>
+  <!-- Shim for process.env to prevent crashes in the browser -->
+  <script>
+    window.process = {
+      env: {
+        API_KEY: "" // Will be overridden by the host environment if available
+      }
+    };
+  </script>
+  <!-- Entry point for the application -->
+  <script type="module" src="./index.tsx"></script>
 </body>
 </html>
