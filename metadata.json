@@ -1,0 +1,5 @@
+{
+  "name": "JobSearch Premium Tracker",
+  "description": "A high-end job application tracking dashboard with AI-powered cover letter and interview guide generation using Gemini.",
+  "requestFramePermissions": []
+}
