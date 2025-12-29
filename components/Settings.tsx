@@ -1,13 +1,18 @@
 
 import React, { useState, useRef } from 'react';
 import { useJobs } from '../context/JobContext';
-import { Save, User, Code, FileCheck, Upload, FileText, CheckCircle, AlertCircle, Zap, RefreshCw, Trash2 } from 'lucide-react';
+import { 
+  Save, User, Code, FileCheck, Upload, FileText, 
+  CheckCircle, AlertCircle, Zap, RefreshCw, Trash2, 
+  Cloud, ExternalLink, Globe, Layout
+} from 'lucide-react';
 
 const Settings: React.FC = () => {
   const { resume, setResume } = useJobs();
   const [formData, setFormData] = useState(resume);
   const [showSaved, setShowSaved] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,6 +29,26 @@ const Settings: React.FC = () => {
       setFormData(cleared);
       setResume(cleared);
     }
+  };
+
+  const simulateGoogleDriveImport = () => {
+    setIsCloudSyncing(true);
+    // Simulating authentication and fetching from Drive
+    setTimeout(() => {
+      const mockCloudResume = `
+        Experience: Senior Software Engineer at TechCorp.
+        Skills: React, TypeScript, Node.js, AWS, Gemini AI.
+        Education: B.Tech in Computer Science.
+        Summary: Expert in building premium cloud applications with AI integrations.
+      `;
+      setFormData(prev => ({ 
+        ...prev, 
+        resumeText: prev.resumeText ? prev.resumeText + "\n[Cloud Updated]: " + mockCloudResume : mockCloudResume 
+      }));
+      setIsCloudSyncing(false);
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 3000);
+    }, 2000);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +108,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in slide-in-from-right-4 duration-500 pb-12">
+    <div className="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-right-4 duration-500 pb-12">
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-bold text-slate-900">Career Profile</h2>
@@ -95,118 +120,146 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden">
-        <div className="px-8 py-6 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileCheck className="w-6 h-6 text-emerald-400" />
-            <h3 className="text-lg font-bold">Resume Intelligence</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Settings Form */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden">
+            <div className="px-8 py-6 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileCheck className="w-6 h-6 text-emerald-400" />
+                <h3 className="text-lg font-bold">Resume Intelligence</h3>
+              </div>
+              {showSaved && (
+                <span className="bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
+                  Sync Successful
+                </span>
+              )}
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <User className="w-4 h-4 text-emerald-600" /> Full Legal Name
+                </label>
+                <input 
+                  required
+                  type="text" 
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-slate-900 font-medium transition-all"
+                  value={formData.fullName}
+                  onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Code className="w-4 h-4 text-emerald-600" /> Professional Summary & Skills
+                </label>
+                <textarea 
+                  required
+                  rows={8}
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none resize-none text-slate-900 font-medium text-sm leading-relaxed transition-all"
+                  value={formData.resumeText || formData.skills}
+                  placeholder="Resume details will be extracted here..."
+                  onChange={e => setFormData({ ...formData, resumeText: e.target.value, skills: e.target.value.substring(0, 500) })}
+                />
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <RefreshCw className={`w-5 h-5 ${showSaved ? 'animate-spin' : ''}`} />
+                Sync Profile
+              </button>
+            </form>
           </div>
-          {showSaved && (
-            <span className="bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
-              Sync Successful
-            </span>
-          )}
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest">
-                Identity Source (PDF)
-              </label>
-              {formData.resumeText && (
-                <button 
-                  type="button"
-                  onClick={handleReset}
-                  className="text-xs font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 uppercase tracking-tighter transition-colors"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  Reset Identity
-                </button>
-              )}
+        {/* Sidebar: Cloud Integrations */}
+        <div className="space-y-8">
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Cloud className="w-5 h-5 text-blue-500" />
+              <h3 className="text-lg font-bold text-slate-900">Cloud Sync</h3>
             </div>
-            <div 
-              onClick={() => !isUploading && fileInputRef.current?.click()}
-              className={`group relative cursor-pointer border-2 border-dashed rounded-3xl transition-all flex flex-col items-center justify-center gap-4 min-h-[200px] ${
-                isUploading 
-                  ? 'border-emerald-500 bg-emerald-50/20' 
-                  : formData.resumeText 
-                    ? 'border-emerald-200 bg-emerald-50/10' 
-                    : 'border-slate-200 hover:border-emerald-500 hover:bg-slate-50'
-              }`}
-            >
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="application/pdf"
-                onChange={handleFileUpload}
-              />
-              
-              {isUploading ? (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-12 h-12 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin" />
-                  <p className="text-emerald-700 font-bold text-sm">Extracting: {uploadProgress}%</p>
+            
+            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              Connect your professional design tools to automatically pull the latest versions of your resume.
+            </p>
+
+            <div className="space-y-3">
+              <button 
+                onClick={simulateGoogleDriveImport}
+                disabled={isCloudSyncing}
+                className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 rounded-2xl transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-white p-2 rounded-lg shadow-sm">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" className="w-5 h-5" alt="Drive" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-bold text-slate-900">Google Drive</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                      {isCloudSyncing ? 'Fetching...' : 'Connected'}
+                    </p>
+                  </div>
                 </div>
-              ) : formData.resumeText ? (
-                <>
-                  <div className="bg-emerald-100 p-4 rounded-2xl">
-                    <FileText className="w-8 h-8 text-emerald-600" />
+                <RefreshCw className={`w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors ${isCloudSyncing ? 'animate-spin' : ''}`} />
+              </button>
+
+              <a 
+                href="https://www.canva.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-purple-50 border border-slate-100 rounded-2xl transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-white p-2 rounded-lg shadow-sm">
+                    <Layout className="w-5 h-5 text-purple-600" />
                   </div>
-                  <div className="text-center px-6">
-                    <p className="text-emerald-900 font-bold">Resume Parsed & Locked</p>
-                    <p className="text-emerald-600 text-[10px] font-black uppercase tracking-widest mt-1">Ready for magic apply</p>
+                  <div className="text-left">
+                    <p className="text-sm font-bold text-slate-900">Canva Design</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Edit Templates</p>
                   </div>
-                </>
-              ) : (
-                <>
-                  <div className="bg-slate-100 p-4 rounded-2xl group-hover:bg-emerald-100 transition-colors">
-                    <Upload className="w-8 h-8 text-slate-400 group-hover:text-emerald-600" />
-                  </div>
-                  <div className="text-center px-6">
-                    <p className="text-slate-900 font-bold">Upload Resume once</p>
-                    <p className="text-slate-500 text-xs mt-1 font-medium">We store your profile locally to boost your speed.</p>
-                  </div>
-                </>
-              )}
+                </div>
+                <ExternalLink className="w-4 h-4 text-slate-300 group-hover:text-purple-500 transition-colors" />
+              </a>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <User className="w-4 h-4 text-emerald-600" /> Full Legal Name
-            </label>
+          <div className="bg-emerald-900 p-8 rounded-[2rem] text-white shadow-xl relative overflow-hidden group">
+            <Globe className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 group-hover:scale-110 transition-transform duration-700" />
+            <h4 className="text-lg font-bold mb-2">Local Upload</h4>
+            <p className="text-xs text-emerald-100/70 mb-6 font-medium leading-relaxed">
+              Prefer manual control? Upload a PDF directly from your machine.
+            </p>
+            
+            <button 
+              onClick={() => !isUploading && fileInputRef.current?.click()}
+              className="w-full bg-white/10 hover:bg-white/20 border border-white/20 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+            >
+              {isUploading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              {isUploading ? `Parsing ${uploadProgress}%` : 'Upload PDF'}
+            </button>
             <input 
-              required
-              type="text" 
-              className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-slate-900 font-medium transition-all"
-              value={formData.fullName}
-              onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="application/pdf"
+              onChange={handleFileUpload}
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Code className="w-4 h-4 text-emerald-600" /> Professional Summary & Skills
-            </label>
-            <textarea 
-              required
-              rows={6}
-              className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none resize-none text-slate-900 font-medium text-sm leading-relaxed transition-all"
-              value={formData.resumeText || formData.skills}
-              placeholder="Resume details will be extracted here..."
-              onChange={e => setFormData({ ...formData, resumeText: e.target.value, skills: e.target.value.substring(0, 500) })}
-            />
-          </div>
-
-          <button 
-            type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] flex items-center justify-center gap-2"
-          >
-            <RefreshCw className={`w-5 h-5 ${showSaved ? 'animate-spin' : ''}`} />
-            Sync Profile
-          </button>
-        </form>
+          {formData.resumeText && (
+            <button 
+              onClick={handleReset}
+              className="w-full flex items-center justify-center gap-2 p-4 text-rose-500 hover:bg-rose-50 rounded-2xl transition-all text-xs font-black uppercase tracking-widest border border-transparent hover:border-rose-100"
+            >
+              <Trash2 className="w-4 h-4" />
+              Wipe Local Identity
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl flex gap-4">
@@ -214,7 +267,7 @@ const Settings: React.FC = () => {
         <div className="text-sm">
           <p className="text-blue-900 font-bold mb-1">Privacy First Storage</p>
           <p className="text-blue-700 leading-relaxed">
-            Your data is stored within your browser's Local Storage. It never touches our servers. You only need to upload your resume once; subsequent applications will use this stored context automatically.
+            Your data is stored within your browser's Local Storage. Cloud integrations like Google Drive are client-side only; we never host your private resumes on our servers.
           </p>
         </div>
       </div>

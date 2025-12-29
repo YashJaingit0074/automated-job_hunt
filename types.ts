@@ -1,5 +1,25 @@
-
 export type JobStatus = 'Applied' | 'Interview' | 'Offer' | 'Rejected' | 'Accepted' | 'Auto-Pilot';
+
+export interface StructuredResume {
+  header: {
+    fullName: string;
+    tagline: string;
+    contact: string[];
+  };
+  summary: string;
+  experience: {
+    role: string;
+    company: string;
+    dates: string;
+    bullets: string[];
+  }[];
+  education: {
+    degree: string;
+    school: string;
+    year: string;
+  }[];
+  skills: string[];
+}
 
 export interface Job {
   id: string;
@@ -11,7 +31,7 @@ export interface Job {
   dateApplied: string;
   description: string;
   coverLetter: string;
-  enhancedResumeText?: string; // AI optimized version of the user's resume for this specific job
+  enhancedResumeText?: string; // Stored as JSON string
   origin: 'application' | 'offer';
 }
 

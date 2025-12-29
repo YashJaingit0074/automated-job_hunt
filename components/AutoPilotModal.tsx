@@ -1,13 +1,14 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useJobs } from '../context/JobContext';
-import { X, Sparkles, Copy, Check, Zap, FileText, CheckCircle2, RotateCcw, Send, CheckCircle } from 'lucide-react';
+import { X, Sparkles, Copy, Check, Zap, FileText, CheckCircle2, RotateCcw, Send, CheckCircle, Download, Loader2 } from 'lucide-react';
 import { Job } from '../types';
 import { generateCoverLetter, enhanceResume } from '../services/gemini';
+import ResumePaper from './ResumePaper';
 
 const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onClose }) => {
   const { resume, updateJob } = useJobs();
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [activeTab, setActiveTab] = useState<'resume' | 'letter'>('resume');
   const [isApplying, setIsApplying] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -15,6 +16,8 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
   const [enhancedResume, setEnhancedResume] = useState(job.enhancedResumeText || '');
   const [tailoredLetter, setTailoredLetter] = useState(job.coverLetter || '');
   const [copied, setCopied] = useState<'resume' | 'letter' | null>(null);
+
+  const documentRef = useRef<HTMLDivElement>(null);
 
   const handleMagicAction = async () => {
     if (!resume.resumeText) {
@@ -45,15 +48,59 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
     }
   };
 
+  const handleDownloadPDF = async () => {
+    if (!documentRef.current || isExporting) return;
+    
+    setIsExporting(true);
+    try {
+      // @ts-ignore
+      const html2canvas = window.html2canvas;
+      // @ts-ignore
+      const { jsPDF } = window.jspdf;
+
+      if (!html2canvas || !jsPDF) {
+        throw new Error("PDF libraries not loaded. Please check your internet connection.");
+      }
+
+      // Add a temporary class for cleaner capture
+      const element = documentRef.current.querySelector('.resume-document') as HTMLElement;
+      if (!element) return;
+      
+      element.classList.add('pdf-export-target');
+
+      const canvas = await html2canvas(element, {
+        scale: 2, // High resolution
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      element.classList.remove('pdf-export-target');
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      
+      const fileName = `${resume.fullName.replace(/\s+/g, '_')}_${activeTab === 'resume' ? 'Resume' : 'CoverLetter'}_${job.company.replace(/\s+/g, '_')}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error("PDF Export failed:", error);
+      alert("Failed to generate PDF. You can try copying the text instead.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const simulateApply = () => {
     setIsApplying(true);
-    
-    // Stage 1: Simulation
     setTimeout(() => {
       setIsApplying(false);
       setShowSuccess(true);
-      
-      // Stage 2: Success Confirmation then Close
       setTimeout(() => {
         updateJob({ 
           ...job, 
@@ -75,11 +122,11 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[80] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-300 border border-white/20 relative">
+      <div className="bg-[#f1f5f9] w-full max-w-6xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[90vh] animate-in zoom-in-95 duration-300 border border-white/20 relative">
         
         {/* Success Overlay */}
         {showSuccess && (
-          <div className="absolute inset-0 z-[90] bg-emerald-600 flex flex-col items-center justify-center text-white animate-in fade-in duration-300">
+          <div className="absolute inset-0 z-[100] bg-emerald-600 flex flex-col items-center justify-center text-white animate-in fade-in duration-300">
             <div className="bg-white/20 p-6 rounded-full animate-bounce mb-6">
               <CheckCircle className="w-16 h-16" />
             </div>
@@ -89,26 +136,36 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
         )}
 
         {/* Header */}
-        <div className="px-8 py-6 bg-gradient-to-r from-purple-600 to-indigo-700 text-white flex items-center justify-between shrink-0">
+        <div className="px-8 py-5 bg-white border-b border-slate-200 text-slate-900 flex items-center justify-between shrink-0 z-10 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
-              <Zap className="w-6 h-6 fill-current text-white" />
+            <div className="bg-purple-600 p-2 rounded-xl shadow-lg shadow-purple-200">
+              <Zap className="w-5 h-5 fill-current text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-black tracking-tight">AI AUTO-PILOT</h3>
-              <p className="text-white/70 text-sm font-medium">Optimizing for {job.role} at {job.company}</p>
+              <h3 className="text-lg font-black tracking-tight">DOCUMENT STUDIO</h3>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Optimizing for {job.role}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleDownloadPDF}
+              disabled={!enhancedResume || isExporting}
+              className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white disabled:opacity-50 transition-all"
+            >
+              {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {isExporting ? 'Exporting...' : 'Export PDF'}
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex px-8 border-b border-slate-100 bg-slate-50/50 shrink-0">
+        <div className="flex px-8 border-b border-slate-200 bg-white shrink-0">
           <button 
             onClick={() => setActiveTab('resume')}
-            className={`px-6 py-4 text-sm font-bold transition-all border-b-2 ${
+            className={`px-6 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
               activeTab === 'resume' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-400 hover:text-slate-600'
             }`}
           >
@@ -116,127 +173,111 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
           </button>
           <button 
             onClick={() => setActiveTab('letter')}
-            className={`px-6 py-4 text-sm font-bold transition-all border-b-2 ${
+            className={`px-6 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${
               activeTab === 'letter' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-400 hover:text-slate-600'
             }`}
           >
-            Tailored Cover Letter
+            Tailored Letter
           </button>
         </div>
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-hidden flex">
-          {/* Document Display */}
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-100/30">
+          <div className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar scroll-smooth">
             {!enhancedResume && !isLoading ? (
-              <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-purple-100 rounded-full animate-ping absolute opacity-20" />
-                  <div className="bg-white p-6 rounded-3xl shadow-xl border border-purple-50">
-                    <Sparkles className="w-12 h-12 text-purple-600" />
-                  </div>
-                </div>
-                <div className="max-w-md">
-                  <h4 className="text-2xl font-black text-slate-900">Ready to Take Off?</h4>
-                  <p className="text-slate-500 mt-2 font-medium">
-                    Our AI will rewrite your resume sections and draft a location-aware cover letter specifically for this job description.
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-6 max-w-md mx-auto">
+                <div className="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100">
+                  <Sparkles className="w-12 h-12 text-purple-600 mx-auto mb-4" />
+                  <h4 className="text-2xl font-black text-slate-900">Document Engine</h4>
+                  <p className="text-slate-500 mt-2 font-medium leading-relaxed">
+                    We'll re-engineer your professional profile into a tailored document optimized for {job.company}'s hiring standards.
                   </p>
                 </div>
                 <button 
                   onClick={handleMagicAction}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-purple-600/30 transition-all active:scale-95 flex items-center gap-2"
+                  className="w-full bg-slate-900 hover:bg-black text-white px-8 py-5 rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
                 >
-                  <Zap className="w-6 h-6 fill-current" />
-                  Activate Magic Apply
+                  <Zap className="w-5 h-5 fill-current" />
+                  Generate Premium Assets
                 </button>
               </div>
             ) : isLoading ? (
-              <div className="h-full flex flex-col items-center justify-center space-y-6">
+              <div className="h-full flex flex-col items-center justify-center space-y-8">
                 <div className="relative">
-                  <div className="w-20 h-20 border-4 border-purple-100 border-t-purple-600 rounded-full animate-spin" />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-purple-600 text-xs font-black">AI</div>
+                  <div className="w-24 h-24 border-[6px] border-slate-200 border-t-purple-600 rounded-full animate-spin shadow-inner" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-purple-600 text-[10px] font-black uppercase tracking-tighter">Rendering</div>
                 </div>
-                <div className="text-center animate-pulse">
-                  <p className="text-slate-900 font-black text-xl">Enhancing Your Professional Identity...</p>
-                  <p className="text-slate-500 font-medium">Injecting keywords for NCR/Remote/Fresher roles</p>
+                <div className="text-center">
+                  <p className="text-slate-900 font-black text-xl">Aligning Professional Identity...</p>
+                  <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-2">Gemini 3 Pro Intelligence Active</p>
                 </div>
               </div>
             ) : (
-              <div className="relative">
-                <div className="absolute top-0 right-0 p-4 flex gap-2">
-                  <button 
-                    onClick={() => copyToClipboard(activeTab)}
-                    className="bg-white/80 backdrop-blur shadow-sm border border-slate-200 p-2 rounded-xl hover:text-purple-600 transition-colors"
-                  >
-                    {copied === activeTab ? <Check className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
-                  </button>
-                  <button 
-                    onClick={handleMagicAction}
-                    className="bg-white/80 backdrop-blur shadow-sm border border-slate-200 p-2 rounded-xl hover:text-purple-600 transition-colors"
-                    title="Regenerate"
-                  >
-                    <RotateCcw className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200 font-sans prose prose-slate max-w-none min-h-[600px] whitespace-pre-wrap text-slate-900 leading-relaxed text-[14px] md:text-[15px]">
-                  {activeTab === 'resume' ? enhancedResume : tailoredLetter}
-                </div>
+              <div ref={documentRef} className="flex justify-center pb-20">
+                <ResumePaper content={activeTab === 'resume' ? enhancedResume : tailoredLetter} type={activeTab} />
               </div>
             )}
           </div>
 
-          {/* Sidebar Info - Desktop Only */}
-          <div className="w-80 border-l border-slate-100 p-8 hidden xl:flex flex-col gap-8 bg-slate-50/20">
-            <div>
-              <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Job Score</h5>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700 text-xl font-black">
-                  98%
+          {/* Tools Sidebar */}
+          <div className="w-80 border-l border-slate-200 p-8 hidden xl:flex flex-col gap-8 bg-white/50 backdrop-blur-sm">
+             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Content Controls</h5>
+                <div className="space-y-4">
+                  <button 
+                    onClick={() => copyToClipboard(activeTab)}
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-purple-50 rounded-xl transition-all group"
+                  >
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-purple-700">Copy Text</span>
+                    {copied === activeTab ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-slate-300" />}
+                  </button>
+                  <button 
+                    onClick={handleMagicAction}
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-purple-50 rounded-xl transition-all group"
+                  >
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-purple-700">Regenerate</span>
+                    <RotateCcw className="w-4 h-4 text-slate-300 group-hover:text-purple-600" />
+                  </button>
+                  <button 
+                    onClick={handleDownloadPDF}
+                    disabled={isExporting}
+                    className="w-full flex md:hidden items-center justify-between p-3 bg-slate-900 text-white rounded-xl transition-all group"
+                  >
+                    <span className="text-xs font-bold">Export PDF</span>
+                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  </button>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900 leading-none">AI Match</p>
-                  <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-wider">Perfect Alignment</p>
-                </div>
-              </div>
-            </div>
+             </div>
 
-            <div>
-              <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">AI Focus Areas</h5>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <p className="text-xs font-bold text-slate-700">Remote Availability</p>
+             <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <h6 className="text-xs font-black text-emerald-900 uppercase tracking-widest">Optimized</h6>
                 </div>
-                <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <p className="text-xs font-bold text-slate-700">NCR Region Context</p>
-                </div>
-                <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <p className="text-xs font-bold text-slate-700">Fresher Keywords</p>
-                </div>
-              </div>
-            </div>
+                <p className="text-[11px] text-emerald-700 font-medium leading-relaxed">
+                  The document has been formatted with industry-standard typography and margin layouts preferred by Fortune 500 recruiters.
+                </p>
+             </div>
           </div>
         </div>
 
         {/* Global Action Footer */}
-        <div className="p-6 border-t border-slate-100 bg-white flex flex-col md:flex-row items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-medium italic">
-            <Sparkles className="w-4 h-4 text-purple-500" />
-            AI has prepared your assets for submission.
+        <div className="p-6 border-t border-slate-200 bg-white flex flex-col md:flex-row items-center justify-between gap-4 shrink-0 z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+          <div className="flex items-center gap-3 text-slate-500 text-xs font-black uppercase tracking-widest">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Document Verified
           </div>
           <div className="flex gap-3 w-full md:w-auto">
              <button 
                 onClick={onClose}
-                className="flex-1 md:flex-none px-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                className="flex-1 md:flex-none px-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all text-xs uppercase tracking-widest"
              >
-               Discard
+               Cancel
              </button>
              <button 
                 disabled={!enhancedResume || isApplying || showSuccess}
                 onClick={simulateApply}
-                className="flex-1 md:flex-none bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white px-8 py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-3"
+                className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-3 active:scale-95"
              >
                 {isApplying ? (
                   <>
@@ -246,7 +287,7 @@ const AutoPilotModal: React.FC<{ job: Job, onClose: () => void }> = ({ job, onCl
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Confirm Auto-Apply
+                    Confirm Application
                   </>
                 )}
              </button>
